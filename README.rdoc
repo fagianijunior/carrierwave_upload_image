@@ -1,28 +1,81 @@
-== README
+== Upload de imagem com carrierwave - Rails 4 ==
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Carrierwave é uma gem rails, que facilita o upload de iagem para o servidor
+nesse exemplo criei uma tabala empregado (employee) com os campos name:string e image:string
 
-Things you may want to cover:
+Criando o projeto:
+$ rails g carrierwave_upload_image -d mysql
+$ cd carrierwave_upload_image
 
-* Ruby version
+Adicione a gem ao Gemfile
+$ nano Gemfile
+  - adicione:
+    gem 'carrierwave'
 
-* System dependencies
+Instale a gem
+$ bundle install
 
-* Configuration
+Crie o MVC para empregado
+$ rails g scaffold employee name:string image:string
 
-* Database creation
+Edite o model do empregado
+$ nano app/model/employee.rb
+  - adicione:
+    mount_uploader :image, ImageUploader
 
-* Database initialization
+  - ficando assim
+    class Employee < ActiveRecord::Base
+      mount_uploader :image, ImageUploader
+    end
 
-* How to run the test suite
+Crie o uploader para image
+$ rails g uploader image
 
-* Services (job queues, cache servers, search engines, etc.)
+Edite o uploader de image
+$ nano app/uploaders/image_uploader.rb
+  - Descomente o seguinte trecho, para ter a opção de gerar thumbs:
+    include CarrierWave::RMagick
 
-* Deployment instructions
+  - Adicione esse trecho
+    version :thumb do
+      process :resize_to_limit => [200, 200]
+    end
 
-* ...
+  - Será necessário possuir instalado em seu linux a ferramta 'libmagickwand-dev'
+    $ sudo apt-get install libmagickwand-dev
 
+Edite employee/show.html.erb
+$ nano app/view/employee/show.html.erb
 
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+  - adicione a tag para exibir a imagem
+    <%= image_tag @employee.image_url( :thumb ) if @employee.image? %>
+
+Edite employee/_form.html.erb
+$ nano app/view/employee/_form.html.erb
+
+  - adicione ao form
+    :html => {:multipart => true}
+
+  - adicione a tag para receber a imagem
+    <%= f.file_field :image %>
+    
+  * Ficando assim
+    <%= form_for(@employee, :html => {:multipart => true}) do |f| %>
+      <div class="field">
+        <%= f.label :name %><br>
+        <%= f.text_field :name %>
+      </div>
+      <div class="field">
+        <%= f.label :image %><br>
+        <%= f.file_field :image %>
+      </div>
+      <div class="actions">
+        <%= f.submit %>
+      </div>
+    <% end %>
+
+Pronto upload de imagem simples e fácil com rails 4 ecarrierwave,
+as imagens ficam organizadas dentro da pasta public/uploads/. Essa 
+pasta pode ser configurada no arquivo app/uploaders/image_uploader.rb,
+assim como o nome do arquivo salvo.
+
